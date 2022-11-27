@@ -15,3 +15,4 @@ Assets/StreamingAssets
 Library
 Release-Win64
 com.logviewer.editor.csproj
+Release-Android
