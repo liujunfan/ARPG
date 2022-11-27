@@ -48,17 +48,8 @@ namespace HybridCLR.Editor
             Directory.CreateDirectory(outputDir);
             
             List<AssetBundleBuild> abs = new List<AssetBundleBuild>();
-
             {
                 var prefabAssets = new List<string>();
-                string testPrefab = $"{Application.dataPath}/Prefabs/HotUpdatePrefab.prefab";
-                prefabAssets.Add(testPrefab);
-                AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-                abs.Add(new AssetBundleBuild
-                {
-                    assetBundleName = "prefabs",
-                    assetNames = prefabAssets.Select(s => ToRelativeAssetPath(s)).ToArray(),
-                });
             }
 
             BuildPipeline.BuildAssetBundles(outputDir, abs.ToArray(), BuildAssetBundleOptions.None, target);
@@ -141,7 +132,7 @@ namespace HybridCLR.Editor
             string streamingAssetPathDst = Application.streamingAssetsPath;
             Directory.CreateDirectory(streamingAssetPathDst);
             string outputDir = GetAssetBundleOutputDirByTarget(target);
-            var abs = new string[] { "prefabs" };
+            var abs = new string[] {};
             foreach (var ab in abs)
             {
                 string srcAb = ToRelativeAssetPath($"{outputDir}/{ab}");

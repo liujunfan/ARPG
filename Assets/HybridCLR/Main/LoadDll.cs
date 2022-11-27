@@ -6,6 +6,7 @@ using System.Linq;
 using HybridCLR;
 using UnityEngine;
 using UnityEngine.Networking;
+using Cysharp.Threading.Tasks;
 
 public class LoadDll : MonoBehaviour
 {
@@ -16,11 +17,13 @@ public class LoadDll : MonoBehaviour
         "mscorlib.dll",
         "System.dll",
         "System.Core.dll",
+        "Nino.Serialization.dll",
+        "Nino.Shared.dll",
     };
 
-    void Start()
+    async void Start()
     {
-        StartCoroutine(DownLoadAssets(this.StartGame));
+        await DownLoadAssets();
     }
 
     private static Dictionary<string, byte[]> s_assetDatas = new Dictionary<string, byte[]>();
@@ -44,42 +47,42 @@ public class LoadDll : MonoBehaviour
         return path;
     }
 
-    IEnumerator DownLoadAssets(Action onDownloadComplete)
+    async UniTask<bool> DownLoadAssets()
     {
         var assets = new List<string>
         {
-            "prefabs",
             "Assembly-CSharp.dll",
         }.Concat(AOTMetaAssemblyNames);
 
-        foreach (var asset in assets)
+        async UniTask<bool> GetBytesAsync(string asset)
         {
             string dllPath = GetWebRequestPath(asset);
-            Debug.Log($"start download asset:{dllPath}");
-            UnityWebRequest www = UnityWebRequest.Get(dllPath);
-            yield return www.SendWebRequest();
-
-#if UNITY_2020_1_OR_NEWER
-            if (www.result != UnityWebRequest.Result.Success)
+            var request = await UnityWebRequest.Get(dllPath).SendWebRequest();
+            if (request.result != UnityWebRequest.Result.Success)
             {
-                Debug.Log(www.error);
+                Debug.Log(request.error);
+                return false;
             }
-#else
-            if (www.isHttpError || www.isNetworkError)
-            {
-                Debug.Log(www.error);
-            }
-#endif
             else
             {
-                // Or retrieve results as binary data
-                byte[] assetData = www.downloadHandler.data;
+                byte[] assetData = request.downloadHandler.data;
                 Debug.Log($"dll:{asset}  size:{assetData.Length}");
                 s_assetDatas[asset] = assetData;
+                return true;
+            }
+        }
+        
+        foreach (var asset in assets)
+        {
+            bool result = await GetBytesAsync(asset);
+            if (!result)
+            {
+                return false;
             }
         }
 
-        onDownloadComplete();
+        StartGame();
+        return true;
     }
 
 
